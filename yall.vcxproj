@@ -18,6 +18,16 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\argparser.cpp" />
+    <ClCompile Include="src\DirectoryInfo.cpp" />
+    <ClCompile Include="src\yall.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\include\argparser.h" />
+    <ClInclude Include="src\include\Arguments.h" />
+    <ClInclude Include="src\include\DirectoryInfo.h" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
