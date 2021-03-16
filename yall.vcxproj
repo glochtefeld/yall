@@ -143,16 +143,6 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClCompile Include="argparser.cpp" />
-    <ClCompile Include="yall.cpp" />
-    <ClCompile Include="DirectoryInfo.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="argparser.h" />
-    <ClInclude Include="Arguments.h" />
-    <ClInclude Include="DirectoryInfo.h" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

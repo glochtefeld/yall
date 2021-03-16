@@ -1,5 +1,5 @@
-#include "argparser.h"
-#include "DirectoryInfo.h"
+#include "include/argparser.h"
+#include "include/DirectoryInfo.h"
 #include <iostream>
 #include <algorithm>
 #include <regex>
@@ -46,6 +46,7 @@ auto main(int argc, char* argv[]) -> int {
 				}
 				else
 					as_path = std::filesystem::current_path() / path;
+				std::cout << as_path.filename().string() << '\n';
 				di.List(as_path);
 			}
 		else {
