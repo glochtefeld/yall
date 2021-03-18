@@ -6,6 +6,7 @@ enum class Arguments {
 	Directories,
 	Files,
 	GroupDirectories,
+	Help,
 	ListLong,
 	SortSize,
 	SortTime

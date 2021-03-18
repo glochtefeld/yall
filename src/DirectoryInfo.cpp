@@ -29,14 +29,20 @@ DirectoryInfo::DirectoryInfo(const ArgSet& flags) {
 			case Arguments::SortTime:
 				sort_time = true;
 				break;
+			case Arguments::Help:
+				std::cout 
+					<< "A help flag has been passed to DirectoryInfo. Whoops!"
+					<< std::endl;
+				[[fallthrough]];
 			default:
-				throw "Unknown argument passed";
+				throw std::invalid_argument("Bad flag list");
 		}
 	}
 }
 
 
 void DirectoryInfo::List(const fs::path& path) {
+	
 	if (list_long) {
 		std::cout << "Permissions:\tSize:\tLast Modified:\t\tName:\n";
 		ListFiles(path);
@@ -56,34 +62,64 @@ void DirectoryInfo::List(const fs::path& path) {
 		ListFiles(path);
 		return;
 	}
-	
+	// 
 	for (const auto& entry : fs::directory_iterator(path)) {
 		// see truth table at end of file
-		if (list_all || entry.path().filename().string()[0] != '.')
+		if (list_all || entry.path().filename().string()[0] != '.') {
 			std::cout << entry.path().filename().string() << '\n';
+		}
 	}
 }
 void DirectoryInfo::ListFiles(const fs::path& path) {
+	std::vector<FileListing> files;
 	for (const auto& entry : fs::directory_iterator(path)) {
 		if (entry.is_regular_file()) {
 			if (list_long) {
-				auto perms = PrettyPermissions(entry.status().permissions());
-				auto size = PrettyFilesize(entry);
-				auto date = PrettyDate(entry.path());
-				auto name = entry.path().filename().string();
-				std::cout << perms << '\t' << size << '\t' << date << "\t" << name << '\n';
+				if (sort_time || sort_size) {
+					files.emplace_back(LongInfo(entry));
+					continue;
+				}
+				else {
+					auto file = LongInfo(entry);
+					if (list_all || file.name[0] != '.')
+						std::cout << PrettyPermissions(file.perms) << '\t' 
+							<< PrettyFilesize(file.size) << '\t' 
+							<< PrettyDate(file.date) << "\t" 
+							<< file.name << '\n';
+				}
 			}
-			else
-				std::cout << entry.path().filename().string() << '\n';
+			else {
+				if (list_all || entry.path().filename().string()[0] != '.')
+					std::cout << entry.path().filename().string() << '\n';
+			}
 		}
 	}
+	if (sort_size)
+		std::sort(files.begin(), files.end(), 
+			[](FileListing a,FileListing b)-> bool {
+				return a.size < b.size;
+			});
+	if (sort_time)
+		std::sort(files.begin(), files.end(),
+			[](FileListing a,FileListing b)-> bool {
+				return a.date < b.date;
+			});
+	std::for_each(files.cbegin(), files.cend(), [this](auto file) {
+		if (list_all || file.name[0] != '.')
+			std::cout << PrettyPermissions(file.perms) << '\t'
+				<< PrettyFilesize(file.size) << '\t'
+				<< PrettyDate(file.date) << "\t"
+				<< file.name << '\n';
+		});
+
 }
 
 
 void DirectoryInfo::ListDirectories(const fs::path& path) {
 	for (const auto& entry : fs::directory_iterator(path)) {
-		if (entry.is_directory())
-			std::cout << entry.path().filename().string() << '\n';
+		if (entry.is_directory()) {
+			std::cout << entry.path().filename().string() << "\t<DIR>\n";
+		}
 	}
 }
 
@@ -102,28 +138,27 @@ auto DirectoryInfo::PrettyPermissions(const fs::perms p)->std::string {
 	return permissions.str();
 }
 
-auto DirectoryInfo::PrettyFilesize(const fs::directory_entry& entry)->std::string {
-	double fsize = entry.file_size();
+auto DirectoryInfo::PrettyFilesize(double fsize)->std::string {
+	double hsize = fsize;
 	auto byte_power = 0;
 	const char* power_size[]{"B", "KB", "MB", "GB", "TB", "EB"};
-	while (fsize > 1024.) {
-		fsize /= 1024.;
+	while (hsize > 1024.) {
+		hsize /= 1024.;
 		byte_power++;
 	}
-	fsize = std::ceil(fsize * 10.) / 10.;
+	hsize = std::ceil(hsize * 10.) / 10.;
 	
 	std::ostringstream size;
-	size << fsize << power_size[byte_power];
+	size << hsize << power_size[byte_power];
 	return size.str();
 }
 
-auto DirectoryInfo::PrettyDate(const fs::path& file)->std::string {
+auto DirectoryInfo::PrettyDate(const fs::file_time_type& ftime)->std::string {
 	std::ostringstream time;
-	auto ftime = fs::last_write_time(file);
 	auto elapsed = tme::duration_cast<tme::seconds>(fs::file_time_type::clock::now().time_since_epoch() 
 		- tme::system_clock::now().time_since_epoch()).count();
 	time_t sys_time = tme::duration_cast<tme::seconds>(ftime.time_since_epoch()).count() - elapsed;
-	struct tm new_time;
+	struct tm new_time {};
 	localtime_s(&new_time,&sys_time); 
 	time << std::setw(2) << new_time.tm_hour 
 		<< ":" << std::setfill('0') << std::setw(2) << new_time.tm_min << ", "
@@ -134,7 +169,14 @@ auto DirectoryInfo::PrettyDate(const fs::path& file)->std::string {
 	
 }
 
-void DirectoryInfo::Sort() { }
+auto DirectoryInfo::LongInfo(const fs::directory_entry& entry)->FileListing {
+	auto perms = entry.status().permissions();
+	auto size = entry.file_size();
+	auto date = entry.last_write_time();
+	auto name = entry.path().filename().string();
+	FileListing fl{ perms,size,date,name };
+	return fl;
+}
 
 /*
 Truth table:

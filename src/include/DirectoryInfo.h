@@ -8,6 +8,15 @@
 #include <unordered_set>
 
 using ArgSet = std::unordered_set<Arguments>;
+
+struct FileListing {
+	std::filesystem::perms perms;
+	uintmax_t size;
+	std::filesystem::file_time_type date;
+	std::string name;
+	// bool operator <(const FileListing& other) const { return true; }
+};
+
 class DirectoryInfo
 {
 	bool list_all = false;
@@ -23,11 +32,13 @@ public:
 	void List(const std::filesystem::path&);
 private:
 	void ListFiles(const std::filesystem::path&);
-	void ListDirectories(const std::filesystem::path&);
-	auto PrettyPermissions(std::filesystem::perms)->std::string;
-	auto PrettyFilesize(const std::filesystem::directory_entry&)->std::string;
-	auto PrettyDate(const std::filesystem::path&)->std::string;
-	void Sort();
+	static void ListDirectories(const std::filesystem::path&);
+	static auto PrettyPermissions(std::filesystem::perms)->std::string;
+	static auto PrettyFilesize(double)->std::string;
+	static auto PrettyDate(const std::filesystem::file_time_type&)->std::string;
+	auto LongInfo(const std::filesystem::directory_entry&)->FileListing;
 };
+
+
 
 #endif

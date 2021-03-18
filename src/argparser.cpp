@@ -37,6 +37,8 @@ auto check_arg(const char arg)->Arguments {
 		return Arguments::Files;
 	case 'g':
 		return Arguments::GroupDirectories;
+	case 'h':
+		return Arguments::Help;
 	case 'l':
 		return Arguments::ListLong;
 	case 's':
