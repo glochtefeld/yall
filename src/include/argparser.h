@@ -1,10 +1,10 @@
-#ifndef ARGPARSE_H
-#define ARGPARSE_H
+#ifndef ARGPARSER_H
+#define ARGPARSER_H
 #pragma once
 #include "Arguments.h"
 #include <string>
-#include <vector>
 #include <unordered_set>
+#include <vector>
 
 using StrVec = std::vector<std::string>;
 using ArgSet = std::unordered_set<Arguments>;

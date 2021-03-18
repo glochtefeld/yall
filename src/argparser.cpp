@@ -1,6 +1,6 @@
-#include "argparser.h"
-#include <iostream>
+#include "include/argparser.h"
 #include <algorithm>
+#include <iostream>
 
 auto parse_args(const StrVec& args) -> ArgSet {
 	std::unordered_set<Arguments> parsed;
@@ -37,10 +37,8 @@ auto check_arg(const char arg)->Arguments {
 		return Arguments::Files;
 	case 'g':
 		return Arguments::GroupDirectories;
-	case 'h':
-		return Arguments::HumanReadable;
 	case 'l':
-		return Arguments::List;
+		return Arguments::ListLong;
 	case 's':
 		return Arguments::SortSize;
 	case 't':
@@ -55,8 +53,7 @@ auto check_arg(const char arg)->Arguments {
  -d: show only directories
  -f: show only files
  -g: group directories first
- -h: human readable file sizes (used with -l)
- -l: list files with permissions, owner, file size, date, and filename
+ -l: list files with permissions, file size, date, and filename
  -s: sort by file size
  -t: sort by time
  */
