@@ -1,7 +1,7 @@
-#ifndef ARGUMENTS_H
-#define ARGUMENTS_H
+#ifndef INCLUDE_FLAG_H
+#define INCLUDE_FLAG_H
 #pragma once
-enum class Arguments {
+enum class Flag {
 	All,
 	Directories,
 	Files,

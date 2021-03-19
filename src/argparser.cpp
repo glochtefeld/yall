@@ -2,8 +2,8 @@
 #include <algorithm>
 #include <iostream>
 
-auto parse_args(const StrVec& args) -> ArgSet {
-	std::unordered_set<Arguments> parsed;
+auto parse_flags(const StrVec& args) -> FlagSet {
+	std::unordered_set<Flag> parsed;
 	try {
 		std::for_each(args.cbegin(), args.cend(),
 			[&parsed](auto arg) {
@@ -11,10 +11,10 @@ auto parse_args(const StrVec& args) -> ArgSet {
 				if (arg.size() > 2) {
 					auto arg_list = arg.substr(1);
 					for (auto& ch : arg_list)
-						parsed.insert(check_arg(ch));
+						parsed.insert(check_flag(ch));
 				}
 				else {
-					parsed.insert(check_arg(arg[1]));
+					parsed.insert(check_flag(arg[1]));
 				}
 			});
 	}
@@ -26,25 +26,25 @@ auto parse_args(const StrVec& args) -> ArgSet {
 	return parsed;
 }
 
-auto check_arg(const char arg)->Arguments {
+auto check_flag(const char arg)->Flag {
 	switch (arg) {
 	case 'A':
 	case 'a':
-		return Arguments::All;
+		return Flag::All;
 	case 'd':
-		return Arguments::Directories;
+		return Flag::Directories;
 	case 'f':
-		return Arguments::Files;
+		return Flag::Files;
 	case 'g':
-		return Arguments::GroupDirectories;
+		return Flag::GroupDirectories;
 	case 'h':
-		return Arguments::Help;
+		return Flag::Help;
 	case 'l':
-		return Arguments::ListLong;
+		return Flag::ListLong;
 	case 's':
-		return Arguments::SortSize;
+		return Flag::SortSize;
 	case 't':
-		return Arguments::SortTime;
+		return Flag::SortTime;
 	default:
 		throw std::invalid_argument(&arg);
 	}

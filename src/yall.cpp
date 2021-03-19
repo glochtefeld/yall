@@ -3,19 +3,19 @@
 #include <algorithm>
 #include <iostream>
 #include <regex>
+#include <string>
+#include <vector>
 
 #ifdef _WIN32
 const char flag_marker = '/';
-const char name[]{ "yall.exe" };
 #else
 const char flag_marker = '-';
-const char name[]{ "yall" };
 #endif
 
-void print_help() {
+void print_help(std::string& name) {
 	std::cout << "Usage: "<<name<<" [flags] [files]\n"
 		<< "Possible Flags:\n"
-		<< "\t"<<flag_marker<<"A,-a\n\t\tShow hidden files (hiding implicit . and ..\n"
+		<< "\t"<<flag_marker<<"A,"<<flag_marker<<"a\n\t\tShow hidden files (hiding implicit . and ..)\n"
 		<< "\t"<<flag_marker<<"d\n\t\tShow only directories\n"
 		<< "\t"<<flag_marker<<"f\n\t\tShow only files\n"
 		<< "\t"<<flag_marker<<"g\n\t\tGroup directories first\n"
@@ -27,33 +27,33 @@ void print_help() {
 }
 
 auto main(int argc, char* argv[]) -> int {
+	if (argc == 1) {
+		// list contents normally
+		DirectoryInfo di;
+		di.List(std::filesystem::current_path());
+		return 0;
+	}
+
+	std::vector<std::string> args(argv, argv + argc);
+	std::string name = args[0];
+	args.erase(args.begin());
+
+	std::vector<std::string> flags;
+	std::vector<std::string> filenames;
+	std::for_each(args.cbegin(), args.cend(), [&flags,&filenames](auto& arg) {
+		if (arg[0] == flag_marker) {
+			flags.push_back(arg);
+		}
+		else {
+			filenames.push_back(arg);
+		}
+		});
+
 	try {
-		if (argc == 1) {
-			// list contents normally
-			DirectoryInfo di;
-			di.List(std::filesystem::current_path());
-			return 0;
-		}
+		auto parsed = parse_flags(flags);
 
-		std::vector<std::string> args;
-		args.reserve(argc);
-		std::vector<std::string> filenames;
-		filenames.reserve(argc);
-
-		// unavoidable pointer arithmetic
-		for (int i = 1; i != argc; ++i) {
-			if (*argv[i] == flag_marker) {
-				args.emplace_back(argv[i]);
-			}
-			else {
-				filenames.emplace_back(argv[i]);
-			}
-		}
-
-		auto parsed = parse_args(args);
-
-		if (parsed.find(Arguments::Help) != parsed.end()) {
-			print_help();
+		if (parsed.find(Flag::Help) != parsed.end()) {
+			print_help(name);
 			return 0;
 		}
 
@@ -90,7 +90,7 @@ auto main(int argc, char* argv[]) -> int {
 	}
 	catch (const std::exception& e) {
 		std::cout << e.what() << std::endl;
-		print_help();
+		print_help(name);
 		return 0;
 	}
 	

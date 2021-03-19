@@ -1,20 +1,19 @@
-#ifndef DIRECTORYINFO_H
-#define DIRECTORYINFO_H
-#include "Arguments.h"
-#include <cmath>
-#include <cstdint>
+#ifndef INCLUDE_DIRECTORYINFO_H
+#define INCLUDE_DIRECTORYINFO_H
+#include "Flag.h"
 #include <filesystem>
 #include <string>
 #include <unordered_set>
+#include <vector>
 
-using ArgSet = std::unordered_set<Arguments>;
+using FlagSet = std::unordered_set<Flag>;
 
 struct FileListing {
 	std::filesystem::perms perms;
 	uintmax_t size;
 	std::filesystem::file_time_type date;
 	std::string name;
-	// bool operator <(const FileListing& other) const { return true; }
+	bool is_directory;
 };
 
 class DirectoryInfo
@@ -28,15 +27,16 @@ class DirectoryInfo
 	bool sort_size = false;
 public:
 	DirectoryInfo() = default;
-	explicit DirectoryInfo(const ArgSet&);
+	explicit DirectoryInfo(const FlagSet&);
 	void List(const std::filesystem::path&);
 private:
-	void ListFiles(const std::filesystem::path&);
-	static void ListDirectories(const std::filesystem::path&);
+	void ListFiles(const std::vector<FileListing>&);
+	void ListDirectories(const std::vector<FileListing>&);
 	static auto PrettyPermissions(std::filesystem::perms)->std::string;
 	static auto PrettyFilesize(double)->std::string;
 	static auto PrettyDate(const std::filesystem::file_time_type&)->std::string;
-	auto LongInfo(const std::filesystem::directory_entry&)->FileListing;
+	static auto LongInfo(const std::filesystem::directory_entry&)->FileListing;
+	void PrintListing(const FileListing&);
 };
 
 

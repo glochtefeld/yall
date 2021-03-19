@@ -1,35 +1,36 @@
 #include "include/DirectoryInfo.h"
 #include <chrono>
+#include <cmath>
+#include <cstdint>
 #include <iostream>
-#include <vector>
 namespace fs = std::filesystem;
 namespace tme = std::chrono;
 
-DirectoryInfo::DirectoryInfo(const ArgSet& flags) {
+DirectoryInfo::DirectoryInfo(const FlagSet& flags) {
 	for (auto arg : flags) {
 		switch (arg) {
-			case Arguments::All:
+			case Flag::All:
 				list_all = true;
 				break;
-			case Arguments::Directories:
+			case Flag::Directories:
 				only_dirs = true;
 				break;
-			case Arguments::Files:
+			case Flag::Files:
 				only_files = true;
 				break;
-			case Arguments::GroupDirectories:
+			case Flag::GroupDirectories:
 				group_directories = true;
 				break;
-			case Arguments::ListLong:
+			case Flag::ListLong:
 				list_long = true;
 				break;
-			case Arguments::SortSize:
+			case Flag::SortSize:
 				sort_size = true;
 				break;
-			case Arguments::SortTime:
+			case Flag::SortTime:
 				sort_time = true;
 				break;
-			case Arguments::Help:
+			case Flag::Help:
 				std::cout 
 					<< "A help flag has been passed to DirectoryInfo. Whoops!"
 					<< std::endl;
@@ -42,83 +43,61 @@ DirectoryInfo::DirectoryInfo(const ArgSet& flags) {
 
 
 void DirectoryInfo::List(const fs::path& path) {
-	
+	std::vector<FileListing> files;
+	for (const auto& entry : fs::directory_iterator(path)) {
+		files.emplace_back(LongInfo(entry));
+	}
+
+	if (sort_size) {
+		std::sort(files.begin(), files.end(),
+			[](FileListing& a, FileListing& b)-> bool {
+				return a.size < b.size;
+			});
+	}
+	if (sort_time) {
+		std::sort(files.begin(), files.end(),
+			[](FileListing& a, FileListing& b)-> bool {
+				return a.date < b.date;
+			});
+	}
+
 	if (list_long) {
 		std::cout << "Permissions:\tSize:\tLast Modified:\t\tName:\n";
-		ListFiles(path);
-		return;
 	}
 
 	if (only_dirs) {
-		ListDirectories(path);
+		ListDirectories(files);
 		return;
 	}
 	if (only_files) {
-		ListFiles(path);
+		ListFiles(files);
 		return;
 	}
 	if (group_directories) {
-		ListDirectories(path);
-		ListFiles(path);
+		ListDirectories(files);
+		ListFiles(files);
 		return;
 	}
-	// 
-	for (const auto& entry : fs::directory_iterator(path)) {
-		// see truth table at end of file
-		if (list_all || entry.path().filename().string()[0] != '.') {
-			std::cout << entry.path().filename().string() << '\n';
+
+	for (const auto& entry : files) {
+		PrintListing(entry);
+	}
+}
+void DirectoryInfo::ListFiles(const std::vector<FileListing>& files) {
+	for (const auto& file : files) {
+		if (!file.is_directory) {
+			PrintListing(file);
 		}
 	}
 }
-void DirectoryInfo::ListFiles(const fs::path& path) {
-	std::vector<FileListing> files;
-	for (const auto& entry : fs::directory_iterator(path)) {
-		if (entry.is_regular_file()) {
-			if (list_long) {
-				if (sort_time || sort_size) {
-					files.emplace_back(LongInfo(entry));
-					continue;
-				}
-				else {
-					auto file = LongInfo(entry);
-					if (list_all || file.name[0] != '.')
-						std::cout << PrettyPermissions(file.perms) << '\t' 
-							<< PrettyFilesize(file.size) << '\t' 
-							<< PrettyDate(file.date) << "\t" 
-							<< file.name << '\n';
-				}
+
+
+void DirectoryInfo::ListDirectories(const std::vector<FileListing>& files) {
+	for (const auto& entry : files) {
+		if (entry.is_directory) {
+			if (list_all || entry.name[0] != '.') {
+				std::cout << entry.name << "\t<DIR>\n";
 			}
-			else {
-				if (list_all || entry.path().filename().string()[0] != '.')
-					std::cout << entry.path().filename().string() << '\n';
-			}
-		}
-	}
-	if (sort_size)
-		std::sort(files.begin(), files.end(), 
-			[](FileListing a,FileListing b)-> bool {
-				return a.size < b.size;
-			});
-	if (sort_time)
-		std::sort(files.begin(), files.end(),
-			[](FileListing a,FileListing b)-> bool {
-				return a.date < b.date;
-			});
-	std::for_each(files.cbegin(), files.cend(), [this](auto file) {
-		if (list_all || file.name[0] != '.')
-			std::cout << PrettyPermissions(file.perms) << '\t'
-				<< PrettyFilesize(file.size) << '\t'
-				<< PrettyDate(file.date) << "\t"
-				<< file.name << '\n';
-		});
-
-}
-
-
-void DirectoryInfo::ListDirectories(const fs::path& path) {
-	for (const auto& entry : fs::directory_iterator(path)) {
-		if (entry.is_directory()) {
-			std::cout << entry.path().filename().string() << "\t<DIR>\n";
 		}
 	}
 }
@@ -174,8 +153,23 @@ auto DirectoryInfo::LongInfo(const fs::directory_entry& entry)->FileListing {
 	auto size = entry.file_size();
 	auto date = entry.last_write_time();
 	auto name = entry.path().filename().string();
-	FileListing fl{ perms,size,date,name };
+	auto is_dir = entry.is_directory();
+	FileListing fl{ perms, size, date, name, is_dir };
 	return fl;
+}
+
+void DirectoryInfo::PrintListing(const FileListing& file) {
+	if (list_all || file.name[0] != '.') {
+		if (list_long) {
+			std::cout << PrettyPermissions(file.perms) << '\t'
+				<< PrettyFilesize(file.size) << '\t'
+				<< PrettyDate(file.date) << '\t'
+				<< file.name << '\n';
+		}
+		else {
+			std::cout << file.name << '\n';
+		}
+	}
 }
 
 /*

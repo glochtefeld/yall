@@ -29,7 +29,7 @@
     <ClInclude Include="src\include\argparser.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\include\Arguments.h">
+    <ClInclude Include="src\include\Flag.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\include\DirectoryInfo.h">
