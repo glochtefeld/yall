@@ -1,5 +1,6 @@
-#include "include/DirectoryInfo.h"
-#include "include/argparser.h"
+#include "argparser.h"
+#include "DirectoryInfo.h"
+#include "Flag.h"
 #include <algorithm>
 #include <iostream>
 #include <regex>

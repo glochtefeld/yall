@@ -1,8 +1,14 @@
-#include "include/DirectoryInfo.h"
+#include "DirectoryInfo.h"
+#include <algorithm>
 #include <chrono>
 #include <cmath>
 #include <cstdint>
 #include <iostream>
+
+#ifndef _WIN32
+#include <iomanip>
+#endif
+
 namespace fs = std::filesystem;
 namespace tme = std::chrono;
 
@@ -137,20 +143,34 @@ auto DirectoryInfo::PrettyDate(const fs::file_time_type& ftime)->std::string {
 	auto elapsed = tme::duration_cast<tme::seconds>(fs::file_time_type::clock::now().time_since_epoch() 
 		- tme::system_clock::now().time_since_epoch()).count();
 	time_t sys_time = tme::duration_cast<tme::seconds>(ftime.time_since_epoch()).count() - elapsed;
-	struct tm new_time {};
-	localtime_s(&new_time,&sys_time); 
+
+	// see note: Deprecation
+#ifdef _WIN32
+	struct tm new_time{};
+	localtime_s(&new_time,&sys_time);
 	time << std::setw(2) << new_time.tm_hour 
 		<< ":" << std::setfill('0') << std::setw(2) << new_time.tm_min << ", "
 		<< (new_time.tm_year + 1900) 
 		<< "-" << std::setfill('0') << std::setw(2) << new_time.tm_mon
 		<< "-" << std::setfill('0') <<  std::setw(2) << new_time.tm_mday;
-	return time.str();
-	
+#else
+	struct tm* new_time = localtime(&sys_time);
+	time << std::setw(2) << new_time->tm_hour
+		<< ":" << std::setfill('0') << std::setw(2) << new_time->tm_min << ", "
+		<< (new_time->tm_year + 1900)
+		<< "-" << std::setfill('0') << std::setw(2) << new_time->tm_mon
+		<< "-" << std::setfill('0') << std::setw(2) << new_time->tm_mday;
+#endif
+	return time.str();	
 }
 
 auto DirectoryInfo::LongInfo(const fs::directory_entry& entry)->FileListing {
 	auto perms = entry.status().permissions();
+#ifdef _WIN32
 	auto size = entry.file_size();
+#else
+	auto size = (entry.is_directory()) ? 4096 : entry.file_size();
+#endif
 	auto date = entry.last_write_time();
 	auto name = entry.path().filename().string();
 	auto is_dir = entry.is_directory();
@@ -159,6 +179,7 @@ auto DirectoryInfo::LongInfo(const fs::directory_entry& entry)->FileListing {
 }
 
 void DirectoryInfo::PrintListing(const FileListing& file) {
+	// see note: Truth Table
 	if (list_all || file.name[0] != '.') {
 		if (list_long) {
 			std::cout << PrettyPermissions(file.perms) << '\t'
@@ -182,5 +203,10 @@ Truth table:
 	| T | F | T  |   T    |
 	| F | T | F  |   F    |
 	| F | F | T  |   T    |
+
+Deprecation:
+	localtime is unsafe and going to be deprecated by MSVC, localtime_s
+	is preferred. However, clang complains about localtime_s, 
+	so we get preprocessor logic blocks! 
 
 */
