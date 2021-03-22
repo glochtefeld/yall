@@ -365,3 +365,9 @@ FodyWeavers.xsd
 # VS stuff
 *.sln
 *.vcxproj*
+
+# Makefiles, if any
+Makefile
+[oO]ut/
+[bB]uild/
+
